@@ -7,17 +7,19 @@ const Cart = require("./Models/cart");
 require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI;
-console.log("MONGODB_URI", MONGODB_URI);
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ordering";
 
-// app.use(bodyParser.json());
+console.log("MONGODB_URI", MONGODB_URI);
+const serverless = require("serverless-http");
+
+app.use(bodyParser.json());
 app.use(
   cors({
     origin: "https://website-shopping-seven.vercel.app", // ✅ Correct Frontend URL
   })
 );
-app.use(cors());
-app.use(bodyParser.json());
+
 mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -167,7 +169,7 @@ app.delete("/products/:id", async (req, res) => {
   }
 });
 
-module.exports = app;
+module.exports = serverless(app);
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
