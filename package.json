@@ -5,7 +5,8 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "fs": "^0.0.1-security",
-    "mongoose": "^8.13.3"
+    "mongoose": "^8.13.3",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
@@ -13,6 +14,7 @@
     "supertest": "^7.1.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node app.js"
   }
 }

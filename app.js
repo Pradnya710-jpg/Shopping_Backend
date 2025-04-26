@@ -8,10 +8,16 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
+console.log("MONGODB_URI", MONGODB_URI);
 
+// app.use(bodyParser.json());
+app.use(
+  cors({
+    origin: "https://website-shopping-seven.vercel.app", // ✅ Correct Frontend URL
+  })
+);
 app.use(cors());
 app.use(bodyParser.json());
-
 mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -25,6 +31,28 @@ app.get("/products", async (req, res) => {
   try {
     const allItems = await Item.find();
     res.json(allItems);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/products", async (req, res) => {
+  try {
+    console.log("req", req.body);
+
+    let productDetails = {
+      title: req.body.title,
+      variantPrice: req.body.variantPrice,
+      quantity: 1,
+      imageSrc: req.body.imageSrc,
+    };
+
+    let newProduct = new Item(productDetails);
+    console.log("newProduct", newProduct);
+
+    await newProduct.save();
+    // res.json(newProduct);
+    res.status(200).json(newProduct);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
@@ -139,6 +167,10 @@ app.delete("/products/:id", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on http://localhost:${PORT}`);
-});
+module.exports = app;
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running locally at http://localhost:${PORT}`);
+  });
+}
