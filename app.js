@@ -11,15 +11,10 @@ const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ordering";
 
 console.log("MONGODB_URI", MONGODB_URI);
-const serverless = require("serverless-http");
 
 app.use(bodyParser.json());
-app.use(
-  cors({
-    origin: "https://website-shopping-seven.vercel.app", // ✅ Correct Frontend URL
-  })
-);
 
+app.use(cors());
 mongoose
   .connect(MONGODB_URI, {
     useNewUrlParser: true,
@@ -28,7 +23,6 @@ mongoose
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Fetch all products
 app.get("/products", async (req, res) => {
   try {
     const allItems = await Item.find();
@@ -40,8 +34,6 @@ app.get("/products", async (req, res) => {
 
 app.post("/products", async (req, res) => {
   try {
-    console.log("req", req.body);
-
     let productDetails = {
       title: req.body.title,
       variantPrice: req.body.variantPrice,
@@ -50,7 +42,6 @@ app.post("/products", async (req, res) => {
     };
 
     let newProduct = new Item(productDetails);
-    console.log("newProduct", newProduct);
 
     await newProduct.save();
     // res.json(newProduct);
@@ -60,7 +51,6 @@ app.post("/products", async (req, res) => {
   }
 });
 
-// Fetch all cart items
 app.get("/cart", async (req, res) => {
   try {
     const cartItems = await Cart.find();
@@ -70,7 +60,6 @@ app.get("/cart", async (req, res) => {
   }
 });
 
-// Add product to cart
 app.post("/cart", async (req, res) => {
   const { productId } = req.body;
 
@@ -81,24 +70,51 @@ app.post("/cart", async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    const newCartItem = new Cart({
-      products: {
+    const checkIfCart = await Cart.findOne({
+      "products.productId": productId,
+    });
+
+    if (checkIfCart) {
+      return res
+        .status(400)
+        .json({ message: "Product is already present in cart" });
+    }
+
+    let cart = await Cart.findOne();
+
+    if (cart) {
+      cart.products.push({
         productId: product._id,
         title: product.title,
         variantPrice: product.variantPrice,
         quantity: 1,
         imageSrc: product.imageSrc,
-      },
-    });
+      });
 
-    await newCartItem.save();
-    res.status(200).json(newCartItem);
+      await cart.save();
+      res.status(200).json(cart);
+    } else {
+      const newCartItem = new Cart({
+        products: [
+          {
+            productId: product._id,
+            title: product.title,
+            variantPrice: product.variantPrice,
+            quantity: 1,
+            imageSrc: product.imageSrc,
+          },
+        ],
+      });
+
+      await newCartItem.save();
+      res.status(200).json(newCartItem);
+    }
   } catch (error) {
+    console.error("Error adding to cart:", error);
     res.status(500).json({ message: "Error adding item to cart" });
   }
 });
 
-// Remove item from cart
 app.delete("/cart/:cartId", async (req, res) => {
   const { cartId } = req.params;
 
@@ -115,7 +131,6 @@ app.delete("/cart/:cartId", async (req, res) => {
   }
 });
 
-// Get product by ID
 app.get("/products/:id", async (req, res) => {
   try {
     const product = await Item.findById(req.params.id);
@@ -130,7 +145,6 @@ app.get("/products/:id", async (req, res) => {
   }
 });
 
-// Search products
 app.get("/search", async (req, res) => {
   try {
     const { title, sku } = req.query;
@@ -151,7 +165,6 @@ app.get("/search", async (req, res) => {
   }
 });
 
-// Delete a product
 app.delete("/products/:id", async (req, res) => {
   try {
     const deletedProduct = await Item.findByIdAndDelete(req.params.id);
@@ -169,10 +182,6 @@ app.delete("/products/:id", async (req, res) => {
   }
 });
 
-module.exports = serverless(app);
-
-if (process.env.NODE_ENV !== "production") {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running locally at http://localhost:${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`🚀 Server running locally at http://localhost:${PORT}`);
+});
