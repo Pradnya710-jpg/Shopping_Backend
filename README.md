@@ -13,7 +13,7 @@ This is the **Backend** part of the Ordering Website, built with **Node.js**, **
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/backend-repo.git
+git clone https://github.com/Pradnya710-jpg/Shopping_Backend
 cd backend
 
 # Install dependencies
