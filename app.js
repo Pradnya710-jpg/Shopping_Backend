@@ -76,39 +76,22 @@ app.post("/cart", async (req, res) => {
 
     if (checkIfCart) {
       return res
-        .status(400)
+        .status(409)
         .json({ message: "Product is already present in cart" });
     }
 
-    let cart = await Cart.findOne();
-
-    if (cart) {
-      cart.products.push({
+    const newCartItem = new Cart({
+      products: {
         productId: product._id,
         title: product.title,
         variantPrice: product.variantPrice,
         quantity: 1,
         imageSrc: product.imageSrc,
-      });
+      },
+    });
 
-      await cart.save();
-      res.status(200).json(cart);
-    } else {
-      const newCartItem = new Cart({
-        products: [
-          {
-            productId: product._id,
-            title: product.title,
-            variantPrice: product.variantPrice,
-            quantity: 1,
-            imageSrc: product.imageSrc,
-          },
-        ],
-      });
-
-      await newCartItem.save();
-      res.status(200).json(newCartItem);
-    }
+    await newCartItem.save();
+    res.status(200).json(newCartItem);
   } catch (error) {
     console.error("Error adding to cart:", error);
     res.status(500).json({ message: "Error adding item to cart" });
@@ -182,6 +165,8 @@ app.delete("/products/:id", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running locally at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running locally at http://localhost:${PORT}`);
+  });
+}
